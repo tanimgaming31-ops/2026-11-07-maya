@@ -6,7 +6,7 @@
 
 ## Android APK — build successful ✅
 
-[**Download the MYRAA Pink + Real 3D Android APK artifact**](https://github.com/tanimgaming31-ops/2026-11-07-maya/actions/runs/42389836953) (GitHub login may be required).  
+[**Download the MYRAA Pink + Real 3D Android APK artifact**](https://github.com/tanimgaming31-ops/2026-11-07-maya/actions/runs/42389965506) (GitHub login may be required).  
 Open the run, select **MYRAA-Android-APK** under Artifacts, download the ZIP, extract its APK and install it on Android.
 
 **Build verification (2026-11-07):** Node.js/Vite, Java 21, Android SDK 35, APK build, APK signing, static JavaScript syntax checks, 3D asset hash checks, signed APK inclusion checks and artifact upload all passed in GitHub Actions. This does **not** establish successful 3D rendering or voice features on the user's physical Android phone.
