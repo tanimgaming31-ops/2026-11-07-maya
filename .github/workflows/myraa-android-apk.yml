@@ -166,6 +166,25 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'APK signature check failed' }
           Get-FileHash -LiteralPath $apk -Algorithm SHA256 | Format-List
 
+
+      - name: Verify the real VRM assets are inside the signed APK
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $apk = 'artifacts/android/MYRAA-Mobile-1.0.0-rc.5-private.apk'
+          Add-Type -AssemblyName System.IO.Compression
+          $archive = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $apk).Path)
+          try {
+            $entries = @($archive.Entries | ForEach-Object { $_.FullName.Replace('\','/') })
+            foreach ($required in @('/maya.vrm', '/maya-vrm-engine.js', '/vendor/three/three.module.min.js', '/vendor/three-vrm.module.min.js')) {
+              $matches = @($entries | Where-Object { $_.EndsWith($required, [StringComparison]::OrdinalIgnoreCase) -or $_ -eq $required.TrimStart('/') })
+              if ($matches.Count -eq 0) { throw "Signed APK is missing 3D file $required." }
+              Write-Output "Verified inside APK: $($matches[0])"
+            }
+          }
+          finally { $archive.Dispose() }
+
+
       - name: Upload MYRAA Android APK
         if: success()
         uses: actions/upload-artifact@v4
