@@ -6,6 +6,8 @@ on:
     paths:
       - MYRAA_Theme_Studio_Source_Tanim_Boss.zip
       - .github/workflows/myraa-android-apk.yml
+      - pink-home.js
+      - pink-home.css
 
 permissions:
   contents: read
@@ -34,6 +36,40 @@ jobs:
           foreach ($file in @('package.json', 'package-lock.json', 'scripts/build-android.ps1', 'android/app/src/main/AndroidManifest.xml')) {
             if (-not (Test-Path -LiteralPath $file)) { throw "Missing required source: $file" }
           }
+
+
+      - name: Install pink character home UI into Android source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not (Test-Path -LiteralPath 'index.html')) { throw 'Vite index.html was not found inside the verified source ZIP.' }
+          New-Item -ItemType Directory -Force -Path 'public' | Out-Null
+          Copy-Item -LiteralPath 'pink-home.js' -Destination 'public/pink-home.js' -Force
+          Copy-Item -LiteralPath 'pink-home.css' -Destination 'public/pink-home.css' -Force
+          & node --check 'public/pink-home.js'
+          if ($LASTEXITCODE -ne 0) { throw 'Pink UI JavaScript syntax failed' }
+          $preview = Get-Content -LiteralPath 'theme-studio.html' -Raw -Encoding utf8
+          $imageMatch = [regex]::Match($preview, '"rose-character\.jpg":"data:image/jpeg;base64,([^"]+)"')
+          if (-not $imageMatch.Success) { throw 'Licensed original rose character concept image missing from preview; cannot use another artist asset.' }
+          [byte[]] $bytes = [Convert]::FromBase64String($imageMatch.Groups[1].Value)
+          Add-Type -AssemblyName System.Drawing
+          $memory = [System.IO.MemoryStream]::new($bytes)
+          $image = [System.Drawing.Image]::FromStream($memory)
+          $rectangle = [System.Drawing.Rectangle]::new([int]($image.Width * 0.30), [int]($image.Height * 0.09), [int]($image.Width * 0.40), [int]($image.Height * 0.70))
+          $bitmap = [System.Drawing.Bitmap]::new($rectangle.Width, $rectangle.Height)
+          $canvas = [System.Drawing.Graphics]::FromImage($bitmap)
+          $canvas.DrawImage($image, [System.Drawing.Rectangle]::new(0,0,$bitmap.Width,$bitmap.Height), $rectangle, [System.Drawing.GraphicsUnit]::Pixel)
+          $bitmap.Save((Join-Path (Resolve-Path 'public').Path 'pink-character.jpg'), [System.Drawing.Imaging.ImageFormat]::Jpeg)
+          $canvas.Dispose(); $bitmap.Dispose(); $image.Dispose(); $memory.Dispose()
+          $html = Get-Content -LiteralPath 'index.html' -Raw -Encoding utf8
+          if ($html -notmatch 'pink-home\.js') {
+            if ($html -notmatch '(?i)</head>' -or $html -notmatch '(?i)</body>') { throw 'Unexpected index.html structure.' }
+            $html = [regex]::Replace($html, '(?i)</head>', '  <link rel="stylesheet" href="./pink-home.css" />' + [Environment]::NewLine + '</head>', 1)
+            $html = [regex]::Replace($html, '(?i)</body>', '  <script defer src="./pink-home.js"></script>' + [Environment]::NewLine + '</body>', 1)
+            Set-Content -LiteralPath 'index.html' -Value $html -Encoding utf8
+          }
+          if (-not (Test-Path 'public/pink-character.jpg')) { throw 'Pink character art generation failed' }
+          Write-Output 'Pink mobile home interface installed; native code, data storage and service files unchanged.'
 
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
