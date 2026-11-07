@@ -9,6 +9,7 @@ on:
       - pink-home.js
       - pink-home.css
       - maya-vrm-engine.js
+      - mobile-safe-header.css
 
 permissions:
   contents: read
@@ -47,6 +48,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path 'public' | Out-Null
           Copy-Item -LiteralPath 'pink-home.js' -Destination 'public/pink-home.js' -Force
           Copy-Item -LiteralPath 'pink-home.css' -Destination 'public/pink-home.css' -Force
+          Copy-Item -LiteralPath 'mobile-safe-header.css' -Destination 'public/mobile-safe-header.css' -Force
           & node --check 'public/pink-home.js'
           if ($LASTEXITCODE -ne 0) { throw 'Pink UI JavaScript syntax failed' }
           $preview = Get-Content -LiteralPath 'theme-studio.html' -Raw -Encoding utf8
@@ -123,6 +125,10 @@ jobs:
           if (-not (Test-Path -LiteralPath $entry)) { throw 'mobile.html is missing: cannot patch the Android entry safely' }
           $html = Get-Content -LiteralPath $entry -Raw -Encoding utf8
           if ($html -notmatch '(?i)<head' -or $html -notmatch '(?i)</body>') { throw 'Unexpected mobile.html document structure' }
+          if ($html -notmatch 'mobile-safe-header.css') {
+            $safeHeader = '<link rel="stylesheet" href="./mobile-safe-header.css" />'
+            $html = [regex]::Replace($html, '(?i)</head>', $safeHeader + [Environment]::NewLine + '</head>', 1)
+          }
           if ($html -notmatch 'maya-pink-mobile-bootstrap') {
             $map = '<script type="importmap" id="maya-vrm-importmap">{"imports":{"three":"./vendor/three/three.module.min.js","three/addons/":"./vendor/three/addons/","@pixiv/three-vrm":"./vendor/three-vrm.module.min.js"}}</script>'
             $html = [regex]::Replace($html,'(?i)(<head[^>]*>)','$1' + [Environment]::NewLine + $map,1)
@@ -156,7 +162,7 @@ jobs:
             $html = [regex]::Replace($html,'(?i)</body>', $bootstrap + [Environment]::NewLine + '</body>',1)
             Set-Content -LiteralPath $entry -Value $html -Encoding utf8
           }
-          foreach($needle in @('maya-pink-mobile-bootstrap','maya-vrm-importmap','pink-home.js','maya-vrm-engine.js')) {
+          foreach($needle in @('maya-pink-mobile-bootstrap','maya-vrm-importmap','pink-home.js','maya-vrm-engine.js','mobile-safe-header.css')) {
             if ((Get-Content $entry -Raw -Encoding utf8) -notlike "*$needle*") { throw "Missing mobile UI startup token $needle" }
           }
           Write-Output 'Actual Android entry mobile.html now starts pink home and 3D renderer.'
@@ -255,7 +261,7 @@ jobs:
             $stream = [System.IO.StreamReader]::new($entry.Open())
             try { $html = $stream.ReadToEnd() }
             finally { $stream.Dispose() }
-            foreach ($token in @('maya-pink-mobile-bootstrap','maya-vrm-importmap','pink-home.js','pink-home.css','maya-vrm-engine.js')) {
+            foreach ($token in @('maya-pink-mobile-bootstrap','maya-vrm-importmap','pink-home.js','pink-home.css','maya-vrm-engine.js','mobile-safe-header.css')) {
               if (-not $html.Contains($token)) { throw "Signed APK has 3D assets, but real mobile.html does not invoke $token. Reject." }
               Write-Output "Confirmed signed APK mobile.html startup: $token"
             }
@@ -263,6 +269,19 @@ jobs:
             if (-not $script -or $script.Length -lt 1000) { throw 'Bundled pink UI script missing/empty.' }
             $runtime = $archive.GetEntry('assets/maya-vrm-engine.js')
             if (-not $runtime -or $runtime.Length -lt 3000) { throw 'Bundled 3D runtime missing/empty.' }
+            $headCss = $archive.GetEntry('assets/mobile-safe-header.css')
+            if (-not $headCss -or $headCss.Length -lt 1000) { throw 'Safe-area header CSS is missing from signed APK.' }
+            $reader = [System.IO.StreamReader]::new($headCss.Open())
+            try { $headerCssText = $reader.ReadToEnd() } finally { $reader.Dispose() }
+            if (-not $headerCssText.Contains('safe-area-inset-top') -or -not $headerCssText.Contains('#app > header')) {
+              throw 'Signed APK header stylesheet does not contain the requested lower/larger header fix.'
+            }
+            $pinkJs = $archive.GetEntry('assets/pink-home.js')
+            $reader2 = [System.IO.StreamReader]::new($pinkJs.Open())
+            try { $pinkJsText = $reader2.ReadToEnd() } finally { $reader2.Dispose() }
+            if (-not $pinkJsText.Contains('myraa.pink.home.enabled.v2')) {
+              throw 'Pink UI defaults have not been reset for the fixed Android build.'
+            }
             $model = $archive.GetEntry('assets/maya.vrm')
             if (-not $model -or $model.Length -lt 13000000) { throw '3D avatar missing from APK.' }
             Write-Output "Actual Android screen references UI and 3D. Model bytes: $($model.Length)."
