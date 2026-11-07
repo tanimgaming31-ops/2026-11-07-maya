@@ -255,66 +255,15 @@ jobs:
               Write-Output "Confirmed signed APK mobile.html startup: $token"
             }
             $pinkStylesFound = $false
-            foreach ($style in @($archive.Entries | Where-Object { $_.FullName -match '^assets/assets/.*\.css
-            if (-not $bootScript -or $bootScript.Length -lt 1500) { throw 'Visible 3D Android boot script is missing.' }
-            $readerBoot = [System.IO.StreamReader]::new($bootScript.Open())
-            try { $bootText = $readerBoot.ReadToEnd() } finally { $readerBoot.Dispose() }
-            if (-not $bootText.Contains('3D-VISIBLE-2026-11-07') -or -not $bootText.Contains('3D Failed')) {
-              throw '3D real runtime loading/errors will not be visible on the Android app.'
-            }
-            $script = $archive.GetEntry('assets/pink-home.js')
-            if (-not $script -or $script.Length -lt 1000) { throw 'Bundled pink UI script missing/empty.' }
-            $runtime = $archive.GetEntry('assets/maya-vrm-engine.js')
-            if (-not $runtime -or $runtime.Length -lt 3000) { throw 'Bundled 3D runtime missing/empty.' }
-            # Vite folds source CSS links into the hashed CSS bundle referenced by real mobile.html.
-            $loadedHeaderCss = $false
             foreach ($style in @($archive.Entries | Where-Object { $_.FullName -match '^assets/assets/.*\.css$' })) {
-              if (-not $html.Contains((Split-Path $style.FullName -Leaf))) { continue }
-              $reader3 = [System.IO.StreamReader]::new($style.Open())
-              try { $compiledCss = $reader3.ReadToEnd() } finally { $reader3.Dispose() }
-              if ($compiledCss.Contains('safe-area-inset-top') -and $compiledCss -match '#app\s*>\s*header') {
-                $loadedHeaderCss = $true
-                Write-Output "Found safe-area header styles in CSS loaded by Android entry: $($style.FullName)"
-              }
-            }
-            if (-not $loadedHeaderCss -and -not $html.Contains('mobile-safe-header.css')) {
-              throw 'The real mobile.html does not load the requested lower and larger header styles.'
-            }
-            $headCss = $archive.GetEntry('assets/mobile-safe-header.css')
-            if (-not $headCss -or $headCss.Length -lt 1000) { throw 'Safe-area header CSS is missing from signed APK.' }
-            $reader = [System.IO.StreamReader]::new($headCss.Open())
-            try { $headerCssText = $reader.ReadToEnd() } finally { $reader.Dispose() }
-            if (-not $headerCssText.Contains('safe-area-inset-top') -or -not $headerCssText.Contains('#app > header')) {
-              throw 'Signed APK header stylesheet does not contain the requested lower/larger header fix.'
-            }
-            $pinkJs = $archive.GetEntry('assets/pink-home.js')
-            $reader2 = [System.IO.StreamReader]::new($pinkJs.Open())
-            try { $pinkJsText = $reader2.ReadToEnd() } finally { $reader2.Dispose() }
-            if (-not $pinkJsText.Contains('myraa.pink.home.enabled.v2')) {
-              throw 'Pink UI defaults have not been reset for the fixed Android build.'
-            }
-            $model = $archive.GetEntry('assets/maya.vrm')
-            if (-not $model -or $model.Length -lt 13000000) { throw '3D avatar missing from APK.' }
-            Write-Output "Actual Android screen references UI and 3D. Model bytes: $($model.Length)."
-          } finally { $archive.Dispose() }
-
-      - name: Upload MYRAA Android APK
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: MYRAA-Android-APK
-          path: artifacts/android/MYRAA-Mobile-1.0.0-rc.5-private.apk
-          retention-days: 7
-          if-no-files-found: error
- })) {
               $readerPink = [System.IO.StreamReader]::new($style.Open())
               try { $cssText = $readerPink.ReadToEnd() } finally { $readerPink.Dispose() }
-              if ($cssText.Contains('.pink-character-stage') -or $cssText.Contains('pink-real-home')) {
+              if ($cssText.Contains('pink-real-home') -or $cssText.Contains('pink-character-stage')) {
                 $pinkStylesFound = $true
-                Write-Output "Verified Vite bundled pink character style in $($style.FullName)"
+                Write-Output "Verified pink character style in $($style.FullName)"
               }
             }
-            if (-not $pinkStylesFound) { throw 'Pink character CSS is missing from compiled Android asset bundle.' }
+            if (-not $pinkStylesFound) { throw 'Pink home styling is absent from the Android CSS bundle.' }
             $bootScript = $archive.GetEntry('assets/maya-3d-boot.js')
             if (-not $bootScript -or $bootScript.Length -lt 1500) { throw 'Visible 3D Android boot script is missing.' }
             $readerBoot = [System.IO.StreamReader]::new($bootScript.Open())
