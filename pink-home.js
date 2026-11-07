@@ -29,7 +29,8 @@
     document.body.classList.toggle('pink-real-home', yes);
     document.body.classList.toggle('pink-orb-fallback', !yes);
     safeSave(yes);
-    if (yes) statusNote('2D character preview. Real 3D model not installed.');
+    window.MayaVRM?.setVisible(yes);
+    if (yes) statusNote(window.MayaVRM?.loaded ? 'Real 3D Maya · drag to rotate' : 'Loading Maya 3D · preview shown meanwhile');
     else statusNote('Original interactive orb is active.');
   };
   const action = name => {
@@ -47,7 +48,7 @@
       case 'background':
       case 'dress':
         if (!clickExisting('#theme-open,#settings-open,#open-settings')) statusNote('Theme or settings panel is not available.');
-        if (name === 'dress') statusNote('Outfit changing requires a licensed, rigged 3D character. Gallery previews are available.');
+        if (name === 'dress') statusNote('The restored VRM is animated; outfit-switching assets are not installed yet.');
         break;
       case 'character':
         enable(!document.body.classList.contains('pink-real-home'));
@@ -57,26 +58,25 @@
         statusNote(document.body.classList.contains('pink-effects-off') ? 'Glow effects paused.' : 'Glow effects enabled.');
         break;
       case 'rotate':
-        tilt = (tilt + 12) % 36;
-        adjust();
-        statusNote('Flat image tilt only. Full 3D rotation needs a rigged model.');
+        if(window.MayaVRM?.loaded){window.MayaVRM.rotate(35);statusNote('Real 3D rotation active.');}
+        else {tilt = (tilt + 12) % 36; adjust();statusNote('Preview tilt while 3D loads.');}
         break;
       case 'move':
-        x = (x + 16) % 64 - 24;
-        adjust();
-        statusNote('Preview shifted. You can also drag the picture.');
+        if(window.MayaVRM?.loaded){window.MayaVRM.move(.15,0);statusNote('Moved 3D model.');}
+        else {x = (x + 16) % 64 - 24; adjust();statusNote('Moved preview while 3D loads.');}
         break;
       case 'zoom-in':
-        scale = Math.min(1.7, +(scale + 0.1).toFixed(2));
-        adjust();
+        if(window.MayaVRM?.loaded)window.MayaVRM.zoom(1);
+        else{scale=Math.min(1.7,+(scale+.1).toFixed(2));adjust();}
         break;
       case 'zoom-out':
-        scale = Math.max(0.7, +(scale - 0.1).toFixed(2));
-        adjust();
+        if(window.MayaVRM?.loaded)window.MayaVRM.zoom(-1);
+        else{scale=Math.max(.7,+(scale-.1).toFixed(2));adjust();}
         break;
       case 'reset':
         x = 0; y = 0; scale = 1; tilt = 0; adjust();
-        statusNote('Preview view reset.');
+        if(window.MayaVRM?.loaded)window.MayaVRM.reset();
+        statusNote('3D or preview view reset.');
         break;
       case 'home':
         enable(true);
@@ -184,6 +184,7 @@
       new MutationObserver(updateStatus).observe(byId('connection'), { childList: true, subtree: true, characterData: true });
     }
     enable(safeRead());
+    window.addEventListener('maya-vrm-loaded',()=>{window.MayaVRM?.setVisible(document.body.classList.contains('pink-real-home')); statusNote('Real 3D Maya loaded: rotate, move, zoom, blink and breathing.');});
     return true;
   }
   function start() {
