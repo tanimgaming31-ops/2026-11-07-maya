@@ -4,11 +4,15 @@
 **Original creator of independently owned contributions:** Tanim Boss  
 **WhatsApp access requests:** [+971 55 512 4483](https://wa.me/971555124483?text=Hello%20Tanim%20Boss%2C%20I%20would%20like%20to%20request%20permission%20for%20MYRAA%20AI%20Assistant.)
 
+## 2026-11-07: Android header and pink 3D startup update
+
+The real Android header is now spaced below the system status bar, with larger MYRAA/MOBILE branding and three larger top-right buttons. The actual Android `mobile.html` loads this style. Pink character home defaults back on for the new build, with a longer startup wait for the VRM renderer and preserved orb fallback. GitHub Actions APK signing and signed APK content checks passed, and a browser DOM smoke test confirmed larger header positioning and that Settings opens. Actual 3D rendering on the owner's phone is not yet verified. Before uninstalling an older APK whose signing key does not match, back up Memory Packs and other local data.
+
 ## Android APK — corrected 3D entrypoint build ✅
 
 **Fix (2026-11-07):** Previous APK contained the VRM model but did **not** load it on the actual Android `mobile.html` screen. That bug was reproduced from the old signed APK and corrected; the new GitHub Actions CI refuses an APK missing the pink/VRM startup scripts in `assets/mobile.html`. Mobile WebGL runtime remains to be confirmed on the user's Android phone.
 
-[**Download the MYRAA Pink + Real 3D Android APK artifact**](https://github.com/tanimgaming31-ops/2026-11-07-maya/actions/runs/42391323463) (GitHub login may be required).  
+[**Download the MYRAA Pink + Real 3D Android APK artifact**](https://github.com/tanimgaming31-ops/2026-11-07-maya/actions/runs/42393527837) (GitHub login may be required).  
 Open the run, select **MYRAA-Android-APK** under Artifacts, download the ZIP, extract its APK and install it on Android.
 
 **Build verification (2026-11-07):** Node.js/Vite, Java 21, Android SDK 35, APK build, APK signing, static JavaScript syntax checks, 3D asset hash checks, signed APK inclusion checks and artifact upload all passed in GitHub Actions. This does **not** establish successful 3D rendering or voice features on the user's physical Android phone.
