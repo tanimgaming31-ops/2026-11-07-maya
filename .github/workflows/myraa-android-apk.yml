@@ -8,6 +8,7 @@ on:
       - .github/workflows/myraa-android-apk.yml
       - pink-home.js
       - pink-home.css
+      - maya-vrm-engine.js
 
 permissions:
   contents: read
@@ -70,6 +71,47 @@ jobs:
           }
           if (-not (Test-Path 'public/pink-character.jpg')) { throw 'Pink character art generation failed' }
           Write-Output 'Pink mobile home interface installed; native code, data storage and service files unchanged.'
+
+
+      - name: Restore old verified real VRM 3D avatar and runtime
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $origin = 'https://raw.githubusercontent.com/tanimgaming31-ops/Maya-2026-10-19/220f5444cae89c12d4fb493ead3463a3ba6d4cc3'
+          $expected = @{
+            'maya.vrm' = 'bbc9a106729ab343fe5202ba502873172cc80e498b949833c63d44454ad7d85d'
+            'vendor/three/three.module.min.js' = 'e2b5ee6bccd38fd6d8a2428546b83c5f2426d84b152ef82be8055556e3b40eb6'
+            'vendor/three/three.core.min.js' = '61ba0df005b05991361d040d8ff670e1aadfd0ce7aeebd1fdb0725957a8957de'
+            'vendor/three/addons/utils/BufferGeometryUtils.js' = 'fda7e946b8e0b5ab39b779206589e7a1079a22eb24efb89d7223e03fdfb1f751'
+            'vendor/three/addons/loaders/GLTFLoader.js' = '67ac5551fdafa6e349bd80c8f8e5e39c136d6b2fb1ad647db9abb21dc86f9e4a'
+            'vendor/three-vrm.module.min.js' = '99f943e956e52dbf52bbe418899e8a8ae5e35f5c79a94ab8e404926afc620bf2'
+          }
+          foreach ($file in @($expected.Keys)) {
+            $dest = Join-Path 'public' $file
+            $folder = Split-Path -Parent $dest
+            New-Item -ItemType Directory -Force -Path $folder | Out-Null
+            $url = "$origin/$file"
+            Write-Output "Retrieving backed-up 3D asset $file from pinned legacy commit"
+            Invoke-WebRequest -Uri $url -OutFile $dest -MaximumRedirection 5
+            $hash = (Get-FileHash -LiteralPath $dest -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($hash -ne $expected[$file]) { throw "3D backup SHA256 mismatch for $file. Refusing to build." }
+          }
+          Copy-Item -LiteralPath 'maya-vrm-engine.js' -Destination 'public/maya-vrm-engine.js' -Force
+          $html = Get-Content -LiteralPath 'index.html' -Raw -Encoding utf8
+          if ($html -notmatch '(?i)</head>' -or $html -notmatch '(?i)</body>') {
+            throw 'Unexpected app HTML structure: refusing to alter it.'
+          }
+          if ($html -notmatch 'type="importmap"') {
+            $map = '<script type="importmap">{"imports":{"three":"./vendor/three/three.module.min.js","three/addons/":"./vendor/three/addons/","@pixiv/three-vrm":"./vendor/three-vrm.module.min.js"}}</script>'
+            $html = [regex]::Replace($html, '(?i)</head>', $map + [Environment]::NewLine + '</head>', 1)
+          }
+          if ($html -notmatch 'maya-vrm-engine.js') {
+            $html = [regex]::Replace($html, '(?i)</body>', '<script type="module" src="./maya-vrm-engine.js"></script>' + [Environment]::NewLine + '</body>', 1)
+          }
+          Set-Content -LiteralPath 'index.html' -Value $html -Encoding utf8
+          if ((Get-Item 'public/maya.vrm').Length -lt 13000000) { throw 'The real 3D VRM model is unexpectedly small.' }
+          Write-Output 'Real 3D assets restored with SHA256 validation. Original source ZIP, Memory Packs and core application untouched.'
+
 
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
