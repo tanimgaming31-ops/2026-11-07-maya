@@ -2,9 +2,11 @@
 
 **Original Creator of Original Contributions:** Tanim Boss
 
-## ✅ নতুন MYRAA APK সফলভাবে তৈরি হয়েছে
+## ✅ সংশোধিত MYRAA APK তৈরি হয়েছে
 
-GitHub Actions Run: https://github.com/tanimgaming31-ops/2026-11-07-maya/actions/runs/42360812697
+**জরুরি সংশোধন:** আগের APK-তে VRM ফাইল থাকলেও Android-এর আসল `mobile.html` থেকে 3D চালু হচ্ছিল না। সংশোধিত বিল্ডে Pink UI ও 3D Engine-এর লোডিং কোড এখন আসল অ্যাপের স্ক্রিনে রয়েছে। Android ফোনে 3D Render এখনো পরীক্ষা বাকি।
+
+GitHub Actions Run: https://github.com/tanimgaming31-ops/2026-11-07-maya/actions/runs/42391323463
 
 ১. উপরের লিংক Chrome বা GitHub অ্যাপে খোলো।
 ২. সফল **MYRAA Android APK** রান খোলো।
