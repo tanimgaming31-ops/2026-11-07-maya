@@ -45,7 +45,6 @@ class MayaVRMStage {
     if(log && (/failed|error/i.test(message))) log.textContent=message;
   }
   async load() {
-    let fallbackUrl = null;
     try {
       if(!('WebGLRenderingContext' in window)) throw new Error('This Android WebView does not support WebGL.');
       this.renderer = new THREE.WebGLRenderer({
@@ -235,7 +234,7 @@ class MayaVRMStage {
     const done=e=>{POINTERS.delete(e.pointerId);oldPinch=pinch();};
     this.container.addEventListener('pointerup',done);
     this.container.addEventListener('pointercancel',done);
-    window.addEventListener('visibilitychange',()=>{document.hidden?this.stop():this.start();});
+    document.addEventListener('visibilitychange',()=>{document.hidden?this.stop():this.start();});
   }
 }
 function startAfterHome(){
