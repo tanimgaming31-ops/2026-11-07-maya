@@ -1,30 +1,32 @@
-# MYRAA AI Assistant — Android ফোনে APK বানানো
+# MYRAA AI Assistant — Android ফোন থেকে APK ডাউনলোড
 
-**Project owner of original contributions:** Tanim Boss  
-**GitHub repository:** https://github.com/tanimgaming31-ops/2026-11-07-maya
+**Original Creator of Original Contributions:** Tanim Boss
 
-## একবার সোর্স ZIP আপলোড করলেই Build শুরু হবে
+## ✅ নতুন MYRAA APK সফলভাবে তৈরি হয়েছে
 
-1. এই ChatGPT কথোপকথন থেকে `MYRAA_GitHub_Android_Build_Ready_Tanim_Boss.zip` ফাইলটি **Android ফোনে ডাউনলোড করো**।
-2. Chrome-এ এই লিংক খোলো: https://github.com/tanimgaming31-ops/2026-11-07-maya/upload/main
-3. GitHub-এ লগইন করা থাকতে হবে। প্রয়োজন হলে Chrome-এর **Desktop site** চালু করো।
-4. **Choose your files** চাপ দিয়ে ডাউনলোড করা ZIP ফাইলটি নির্বাচন করো। ফাইলটি **unzip না করে**, নাম পরিবর্তন না করে আপলোড করো।
-5. **Commit changes** চাপো। GitHub Actions স্বয়ংক্রিয়ভাবে বিল্ড শুরু করার জন্য সেট করা আছে।
-6. এই লিংক খোলো: https://github.com/tanimgaming31-ops/2026-11-07-maya/actions
-7. **MYRAA Android APK**-এর সর্বশেষ রান সবুজ হলে সেটিতে চাপ দাও।
-8. **Artifacts → MYRAA-Android-APK** ডাউনলোড করো। প্রাপ্ত artifact ZIP extract করে APK ইনস্টল করো।
+GitHub Actions Run: https://github.com/tanimgaming31-ops/2026-11-07-maya/actions/runs/42360812697
 
-### যদি Build Failed দেখায়
+১. উপরের লিংক Chrome বা GitHub অ্যাপে খোলো।
+২. সফল **MYRAA Android APK** রান খোলো।
+৩. নিচের **Artifacts → MYRAA-Android-APK** ফাইলে চাপ দিয়ে ZIP ডাউনলোড করো।
+৪. Files অ্যাপে ZIP extract করো।
+৫. ভেতরের `MYRAA-Mobile-1.0.0-rc.5-private.apk` ফাইলটি খুলে Install করো।
+৬. Android অনুমতি চাইলে নিজের বিশ্বাসযোগ্য এই বিল্ডের জন্য অনুমতি দিতে পারো।
+৭. অ্যাপের Settings-এ নিজের Gemini API key দিয়ে Voice/Chat পরীক্ষা করো; অন্য কাউকে API key দেবে না।
 
-- বর্তমান রিপোজিটরিতে সোর্স ZIP না থাকলে Build ব্যর্থ হওয়ার কথা। ZIP আপলোডের পর নতুন রান পরীক্ষা করো।
-- Build সফল না হলে সর্বশেষ রান খুলে ব্যর্থ step-এর log দেখতে হবে।
-- 3D মডেল এই public-source ZIP-এ নেই; নতুন build-এ 3D চরিত্র থাকবে না।
-- অ্যাপের সব ফিচার বাস্তবে কাজ করছে এমন প্রমাণ পাওয়া যায়নি। API ও মোবাইল অনুমতি পরীক্ষা করতে হবে।
+## নতুন ডিজাইনের অবস্থা
 
-### গুরুত্বপূর্ণ নিরাপত্তা
+- ৮টি নতুন Particle Orb color theme
+- ৯টি CSS background scene
+- Orb touch rotation, move, zoom ও pulse
+- আগের ডিজাইনের ১৪টি ছবি Gallery-তে
+- Voice commands: নির্বাচিত বাংলা/ইংরেজি/হিন্দি/Tagalog/Indonesian বাক্য সাপোর্টের কোড আছে। ফোনে বাস্তব পরীক্ষা বাকি।
+- **3D Girl Model নেই**। ছবিগুলোকে চলমান 3D character বলা যাবে না।
 
-এই GitHub রিপোজিটরি বর্তমানে Public। ফাইল আপলোড করার সঙ্গে সঙ্গে অন্যরা ZIP কপি করতে পারবে। পরে Private করলেও আগের কপি ফেরত নেওয়া যাবে না। তোমার সৃষ্ট কোডের স্বত্ব আলাদা, কিন্তু source-এ থাকা MIT লাইসেন্স ও third-party asset শর্তও বহাল।
+সোর্স ZIP: https://github.com/tanimgaming31-ops/2026-11-07-maya/blob/main/MYRAA_Theme_Studio_Source_Tanim_Boss.zip
 
-**APK-তে পুরোনো 3D মডেলের redistribution অধিকার নেই।** পুরোনো APK Public GitHub-এ আপলোড করো না। Gemini API key, পাসওয়ার্ড, ব্যক্তিগত ডেটাও কখনো আপলোড করবে না।
+**সতর্কতা:** নতুন APK-এর signing key আগের APK থেকে আলাদা হতে পারে। আপডেট ইনস্টল না হলে আগে পুরোনো অ্যাপের তথ্য/Memory Pack ব্যাকআপ নাও। আনইনস্টল করলে লোকাল ডেটা হারাতে পারে।
 
-**WhatsApp যোগাযোগ:** [+971 55 512 4483](https://wa.me/971555124483?text=Hello%20Tanim%20Boss%2C%20I%20want%20to%20request%20MYRAA%20AI%20Assistant%20access.)
+**এই রিপোজিটরি Public।** কোড অন্যরা ডাউনলোড করতে পারবে। Private করলে ভবিষ্যতের অ্যাক্সেস সীমিত হবে, কিন্তু আগের কপি ফেরত নেওয়া যাবে না।
+
+WhatsApp Permission: https://wa.me/971555124483
