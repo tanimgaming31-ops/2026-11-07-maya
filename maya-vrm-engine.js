@@ -58,7 +58,24 @@ class MayaVRMStage {
       this.container.appendChild(this.renderer.domElement);
       const loader = new GLTFLoader();
       loader.register(parser=>new VRMLoaderPlugin(parser));
-      const gltf=await loader.loadAsync(MODEL_URL);
+      // Some Android file:// WebViews reject glTF's direct file loader URL.
+      // First try it normally; if unavailable, read the bundled file as a Blob URL.
+      let gltf=null, firstError=null, modelBlobURL=null;
+      try { gltf=await loader.loadAsync(MODEL_URL); }
+      catch(e) { firstError=e; console.warn('[Maya3D] direct asset load failed:',e); }
+      if(!gltf) {
+        try {
+          const response=await fetch(MODEL_URL);
+          const blob=await response.blob();
+          if(blob.size<13000000)throw Error('Bundled VRM asset is missing or too small.');
+          modelBlobURL=URL.createObjectURL(blob);
+          gltf=await loader.loadAsync(modelBlobURL);
+        } catch(secondError) {
+          throw Error('Model load failed. Direct: '+String(firstError?.message||'unknown')+'; Blob: '+String(secondError?.message||secondError));
+        } finally {
+          if(modelBlobURL)URL.revokeObjectURL(modelBlobURL);
+        }
+      }
       const vrm=gltf.userData?.vrm;
       if(!vrm || !vrm.humanoid) throw new Error('Model is not a valid humanoid VRM.');
       this.vrm=vrm;
@@ -83,10 +100,10 @@ class MayaVRMStage {
       return true;
     }catch(error){
       console.error('Maya VRM setup error',error);
-      this.failed=true; this.loading=false;
+      this.failed=true; this.loading=false; this.lastError=String(error?.message||error);
       this.destroyRenderer();
       this.container.style.display='none';
-      this.setInfo('3D model failed to load. 2D image fallback active.');
+      this.setInfo('3D failed: '+this.lastError.slice(0,150));
       window.dispatchEvent(new CustomEvent('maya-vrm-failed',{detail:String(error?.message||error)}));
       return false;
     }
