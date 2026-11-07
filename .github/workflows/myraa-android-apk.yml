@@ -47,15 +47,24 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Locate preinstalled Android SDK
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $roots = @($env:ANDROID_HOME, $env:ANDROID_SDK_ROOT, 'C:\Android\android-sdk') | Where-Object { $_ -and (Test-Path -LiteralPath $_) }
+          $sdk = $roots | Select-Object -First 1
+          if (-not $sdk) { throw 'No Android SDK was found on the Windows runner.' }
+          "ANDROID_HOME=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Output "Using Android SDK at $sdk"
 
       - name: Install Android SDK 35 tools
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
-          if ($LASTEXITCODE -ne 0) { throw 'Android SDK setup failed' }
+          $cmd = Get-ChildItem -Path (Join-Path $env:ANDROID_HOME 'cmdline-tools') -Filter sdkmanager.bat -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $cmd) { throw 'sdkmanager.bat was not found in Android command-line tools.' }
+          & $cmd.FullName --sdk_root="$env:ANDROID_HOME" 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+          if ($LASTEXITCODE -ne 0) { throw 'Android SDK 35 setup failed' }
 
       - name: Install MYRAA JavaScript dependencies
         shell: pwsh
