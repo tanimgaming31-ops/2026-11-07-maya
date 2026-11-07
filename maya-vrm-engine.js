@@ -248,7 +248,7 @@ function startAfterHome(){
       const runtime=new MayaVRMStage(stage);
       window.MayaVRM=runtime;
       runtime.load();
-    }else if(attempts>=60){clearInterval(timer);console.warn('Pink home screen not mounted. 3D not started.');}
+    }else if(attempts>=300){clearInterval(timer);console.warn('Pink home screen did not mount; preserving original Orb.');}
   },200);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startAfterHome,{once:true});
