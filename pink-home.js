@@ -1,7 +1,7 @@
 /* MYRAA Pink Character Home: visual layer only. No changes to Gemini, chat, native permissions, or Memory Packs. */
 (() => {
   'use strict';
-  const PREFERENCE = 'myraa.pink.home.enabled.v1';
+  const PREFERENCE = 'myraa.pink.home.enabled.v2'; // Fresh default after prior failed Orb-only releases.
   const byId = id => document.getElementById(id);
   const find = selectors => document.querySelector(selectors);
   const safeSave = enabled => { try { localStorage.setItem(PREFERENCE, enabled ? 'true' : 'false'); } catch (_) {} };
@@ -47,7 +47,7 @@
       case 'tools':
       case 'background':
       case 'dress':
-        if (!clickExisting('#theme-open,#settings-open,#open-settings')) statusNote('Theme or settings panel is not available.');
+        if (!clickExisting('#theme-open,#settings,#settings-open,#open-settings')) statusNote('Theme or settings panel is not available.');
         if (name === 'dress') statusNote('The restored VRM is animated; outfit-switching assets are not installed yet.');
         break;
       case 'character':
@@ -95,7 +95,7 @@
           statusNote('Routines screen is not linked in this build.');
         break;
       case 'settings':
-        if (!clickExisting('#settings-open,#open-settings,#theme-open')) statusNote('Settings panel unavailable.');
+        if (!clickExisting('#settings,#settings-open,#open-settings,#theme-open')) statusNote('Settings panel unavailable.');
         break;
     }
   };
@@ -184,14 +184,40 @@
       new MutationObserver(updateStatus).observe(byId('connection'), { childList: true, subtree: true, characterData: true });
     }
     enable(safeRead());
+    document.documentElement.dataset.mayaPinkHome = 'mounted';
+    window.addEventListener('maya-vrm-failed', () => statusNote('Real 3D unavailable. The character image is shown as fallback.'));
     window.addEventListener('maya-vrm-loaded',()=>{window.MayaVRM?.setVisible(document.body.classList.contains('pink-real-home')); statusNote('Real 3D Maya loaded: rotate, move, zoom, blink and breathing.');});
     return true;
   }
   function start() {
+    // The native Android app renders its HOME DOM from a deferred Vite module.
+    // Observe the actual render instead of giving up after a short timer.
+    if (mount()) return;
+    const host = byId('app') || document.body;
+    let observer = null;
+    const tryMount = () => {
+      try {
+        if (byId('pink-character-stage') || mount()) {
+          observer?.disconnect();
+          clearInterval(timer);
+          return true;
+        }
+      } catch (error) {
+        console.error('[Maya Pink Home] mount error:', error);
+      }
+      return false;
+    };
+    if (window.MutationObserver) {
+      observer = new MutationObserver(tryMount);
+      observer.observe(host, {childList:true, subtree:true});
+    }
     let tries = 0;
     const timer = setInterval(() => {
-      tries += 1;
-      if (mount() || tries > 40) clearInterval(timer);
+      if (tryMount() || ++tries > 240) {
+        clearInterval(timer);
+        observer?.disconnect();
+        if (!byId('pink-character-stage')) console.error('[Maya Pink Home] missing real .portrait app screen');
+      }
     }, 250);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
