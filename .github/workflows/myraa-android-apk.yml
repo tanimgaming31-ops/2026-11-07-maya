@@ -119,6 +119,15 @@ jobs:
           node-version: '22'
           cache: npm
 
+
+      - name: Verify 3D VRM JavaScript module syntax
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Get-Content -LiteralPath 'public/maya-vrm-engine.js' -Raw -Encoding utf8 | node --input-type=module --check
+          if ($LASTEXITCODE -ne 0) { throw 'The 3D VRM engine did not pass JavaScript syntax validation.' }
+
+
       - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
