@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - MYRAA_GitHub_Android_Build_Ready_Tanim_Boss.zip
+      - MYRAA_Theme_Studio_Source_Tanim_Boss.zip
       - .github/workflows/myraa-android-apk.yml
 
 permissions:
@@ -23,11 +23,11 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $zip = 'MYRAA_GitHub_Android_Build_Ready_Tanim_Boss.zip'
+          $zip = 'MYRAA_Theme_Studio_Source_Tanim_Boss.zip'
           if (-not (Test-Path -LiteralPath $zip)) {
             throw "The MYRAA source ZIP is missing. Upload $zip to the repository root from your Android phone."
           }
-          $expected = '89caa6adc0ccb91a4871a12d1773c8340eaabbe9d02fc75be0a312a7dbd9d073'
+          $expected = '5f22942e2bac118be376c3bed97ccbc5de485ea92d2acc7b5aef444163d9107d'
           $actual = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($actual -ne $expected) { throw "Source ZIP checksum differs from the verified package. Expected $expected. Got $actual." }
           Expand-Archive -LiteralPath $zip -DestinationPath . -Force
