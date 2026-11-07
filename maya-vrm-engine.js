@@ -120,6 +120,7 @@ class MayaVRMStage {
       this.renderer.setSize(w,h,false);
       this.camera.aspect=w/h;
       this.camera.updateProjectionMatrix();
+      if (this.model && this.center) this.updateCamera();
     }
   }
   updateCamera(){

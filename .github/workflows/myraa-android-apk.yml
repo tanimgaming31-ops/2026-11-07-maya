@@ -113,6 +113,54 @@ jobs:
           Write-Output 'Real 3D assets restored with SHA256 validation. Original source ZIP, Memory Packs and core application untouched.'
 
 
+      - name: Fix actual Android entry screen mobile.html
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # The APK launches assets/mobile.html, NOT the Vite demo index.html.
+          # Earlier builds packaged JS and VRM but never loaded them: repair the actual app entry.
+          $entry = 'mobile.html'
+          if (-not (Test-Path -LiteralPath $entry)) { throw 'mobile.html is missing: cannot patch the Android entry safely' }
+          $html = Get-Content -LiteralPath $entry -Raw -Encoding utf8
+          if ($html -notmatch '(?i)<head' -or $html -notmatch '(?i)</body>') { throw 'Unexpected mobile.html document structure' }
+          if ($html -notmatch 'maya-pink-mobile-bootstrap') {
+            $map = '<script type="importmap" id="maya-vrm-importmap">{"imports":{"three":"./vendor/three/three.module.min.js","three/addons/":"./vendor/three/addons/","@pixiv/three-vrm":"./vendor/three-vrm.module.min.js"}}</script>'
+            $html = [regex]::Replace($html,'(?i)(<head[^>]*>)','$1' + [Environment]::NewLine + $map,1)
+            $bootstrap = @'
+          <script id="maya-pink-mobile-bootstrap">
+          (function(){
+            'use strict';
+            function loadPinkAnd3D() {
+              if (document.getElementById('maya-mobile-ui-loaded')) return;
+              var style=document.createElement('link');
+              style.id='maya-mobile-ui-loaded';style.rel='stylesheet';style.href='./pink-home.css';
+              document.head.appendChild(style);
+              var pink=document.createElement('script');
+              pink.src='./pink-home.js';
+              pink.onload=function(){
+                var vrm=document.createElement('script');
+                vrm.type='module';
+                vrm.src='./maya-vrm-engine.js';
+                vrm.addEventListener('error',function(){console.error('Maya 3D module failed to load; 2D fallback kept');});
+                document.body.appendChild(vrm);
+              };
+              pink.onerror=function(){console.error('Pink UI failed to load from app assets');};
+              document.body.appendChild(pink);
+            }
+            if(document.readyState==='loading')
+              document.addEventListener('DOMContentLoaded',loadPinkAnd3D,{once:true});
+            else loadPinkAnd3D();
+          })();
+          </script>
+          '@
+            $html = [regex]::Replace($html,'(?i)</body>', $bootstrap + [Environment]::NewLine + '</body>',1)
+            Set-Content -LiteralPath $entry -Value $html -Encoding utf8
+          }
+          foreach($needle in @('maya-pink-mobile-bootstrap','maya-vrm-importmap','pink-home.js','maya-vrm-engine.js')) {
+            if ((Get-Content $entry -Raw -Encoding utf8) -notlike "*$needle*") { throw "Missing mobile UI startup token $needle" }
+          }
+          Write-Output 'Actual Android entry mobile.html now starts pink home and 3D renderer.'
+
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
@@ -193,6 +241,32 @@ jobs:
           }
           finally { $archive.Dispose() }
 
+
+      - name: Verify Pink + 3D bootstraps inside signed Android entry HTML
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Add-Type -AssemblyName System.IO.Compression
+          $apk = (Resolve-Path 'artifacts/android/MYRAA-Mobile-1.0.0-rc.5-private.apk').Path
+          $archive = [System.IO.Compression.ZipFile]::OpenRead($apk)
+          try {
+            $entry = $archive.GetEntry('assets/mobile.html')
+            if (-not $entry) { throw 'Signed APK does not have the real Android mobile.html entry.' }
+            $stream = [System.IO.StreamReader]::new($entry.Open())
+            try { $html = $stream.ReadToEnd() }
+            finally { $stream.Dispose() }
+            foreach ($token in @('maya-pink-mobile-bootstrap','maya-vrm-importmap','pink-home.js','pink-home.css','maya-vrm-engine.js')) {
+              if (-not $html.Contains($token)) { throw "Signed APK has 3D assets, but real mobile.html does not invoke $token. Reject." }
+              Write-Output "Confirmed signed APK mobile.html startup: $token"
+            }
+            $script = $archive.GetEntry('assets/pink-home.js')
+            if (-not $script -or $script.Length -lt 1000) { throw 'Bundled pink UI script missing/empty.' }
+            $runtime = $archive.GetEntry('assets/maya-vrm-engine.js')
+            if (-not $runtime -or $runtime.Length -lt 3000) { throw 'Bundled 3D runtime missing/empty.' }
+            $model = $archive.GetEntry('assets/maya.vrm')
+            if (-not $model -or $model.Length -lt 13000000) { throw '3D avatar missing from APK.' }
+            Write-Output "Actual Android screen references UI and 3D. Model bytes: $($model.Length)."
+          } finally { $archive.Dispose() }
 
       - name: Upload MYRAA Android APK
         if: success()
